@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-archivo = 'antidepressant-use-by-country-2024.csv'
+
 
 def cargar_datos(archivo):
     
@@ -25,7 +25,7 @@ def limpiar_datos(df):
     
     return df
 
-def obtener_top11_22(df, columna='AntidepressantUse_PeoplePer1kUsingDaily_2022'):
+def obtener_top10_22(df, columna='AntidepressantUse_PeoplePer1kUsingDaily_2022'):
     """
     Obtiene los 10 países con mayor consumo de antidepresivos según una columna específica.
     
@@ -36,12 +36,17 @@ def obtener_top11_22(df, columna='AntidepressantUse_PeoplePer1kUsingDaily_2022')
     Returns:
         pd.DataFrame: Top 10 países.
     """
-    # Verificar si la columna existe
     if columna not in df.columns:
         raise ValueError(f"La columna {columna} no existe en el DataFrame.")
     
+    # Convertir la columna a numérico, si no se puede convertir, pone NaN
+    df[columna] = pd.to_numeric(df[columna], errors='coerce')
+    
+    # Eliminar filas con valores NaN en la columna especificada
+    df_limpio = df.dropna(subset=[columna])
+    
     # Ordenar el DataFrame de mayor a menor según la columna especificada
-    df_top10 = df.sort_values(by=columna, ascending=False).head(10)
+    df_top10 = df_limpio.sort_values(by=columna, ascending=False).head(10)
     return df_top10
 
 def obtener_top10_21(df, columna='AntidepressantUse_PeoplePer1kUsingDaily_2021'):
@@ -55,12 +60,49 @@ def obtener_top10_21(df, columna='AntidepressantUse_PeoplePer1kUsingDaily_2021')
     Returns:
         pd.DataFrame: Top 10 países.
     """
-    # Verificar si la columna existe
     if columna not in df.columns:
         raise ValueError(f"La columna {columna} no existe en el DataFrame.")
     
+    # Convertir la columna a numérico, si no se puede convertir, pone NaN
+    df[columna] = pd.to_numeric(df[columna], errors='coerce')
+    
+    # Eliminar filas con valores NaN en la columna especificada
+    df_limpio = df.dropna(subset=[columna])
+    
     # Ordenar el DataFrame de mayor a menor según la columna especificada
-    df_top10 = df.sort_values(by=columna, ascending=False).head(10)
+    df_top10 = df_limpio.sort_values(by=columna, ascending=False).head(10)
+    return df_top10
+
+def obtener_top10_por_renta(df, columna_consumo='AntidepressantUse_PeoplePer1kUsingDaily_2022', columna_renta='AntidepressantUseAnnualSalesPerCapita2021'):
+    """
+    Obtiene los 10 países con mayor consumo de antidepresivos según su renta.
+    
+    Args:
+        df (pd.DataFrame): DataFrame limpio.
+        columna_consumo (str): Columna de consumo de antidepresivos.
+        columna_renta (str): Columna de renta (ventas per cápita).
+        
+    Returns:
+        pd.DataFrame: Top 10 países.
+    """
+    
+    if columna_consumo not in df.columns:
+        raise ValueError(f"La columna {columna_consumo} no existe en el DataFrame.")
+    
+    # Convertir la columna a numérico, con NaN para valores no convertibles
+    df[columna_consumo] = pd.to_numeric(df[columna_consumo], errors='coerce')
+    df[columna_renta] = pd.to_numeric(df[columna_renta], errors='coerce')
+    # Primero, ordenar por renta descendente
+    df_sorted_renta = df.sort_values(by=columna_renta, ascending=False)
+    
+    # Luego, dentro de los países con mayor renta, ordenar por consumo
+    df_sorted = df_sorted_renta.sort_values(by=columna_consumo, ascending=False)
+    
+    # Seleccionar los 10 primeros
+    df_top10 = df_sorted.head(10)
+    df_top10 = df_top10.reset_index(drop=True)
+    df_top10.index = df_top10.index + 1
+
     return df_top10
 
 def graficar_top10(df_top10, columna='AntidepressantUse_PeoplePer1kUsingDaily_2022', titulo='Top 10 Países por Consumo de Antidepresivos (2022)'):
@@ -72,8 +114,15 @@ def graficar_top10(df_top10, columna='AntidepressantUse_PeoplePer1kUsingDaily_20
         columna (str): Columna a usar para la gráfica.
         titulo (str): Título de la gráfica.
     """
+    # Verificar que el DataFrame contiene las columnas necesarias
+    if 'country' not in df_top10.columns:
+        raise ValueError("El DataFrame debe contener una columna llamada 'country'.")
+    if columna not in df_top10.columns:
+        raise ValueError(f"La columna {columna} no existe en el DataFrame.")
+    
     plt.figure(figsize=(12, 8))
     sns.barplot(x=columna, y='country', data=df_top10, palette='viridis')
+    
     plt.title(titulo, fontsize=16)
     plt.xlabel('Consumo de Antidepresivos por 1k Personas (Diario)', fontsize=14)
     plt.ylabel('País', fontsize=14)
@@ -81,6 +130,7 @@ def graficar_top10(df_top10, columna='AntidepressantUse_PeoplePer1kUsingDaily_20
     plt.yticks(fontsize=12)
     plt.tight_layout()
     plt.show()
+
 
 def graficar_top10_por_renta(df_top10, columna_consumo='AntidepressantUse_PeoplePer1kUsingDaily_2022', columna_renta='AntidepressantUseAnnualSalesPerCapita2021', titulo='Top 10 paises consumo de antidepresivos por Renta'):
     """
