@@ -484,3 +484,5 @@ def Hipnoticos_situacion(data_Hipnoticos_situacion, title='Consumo de Hipnótico
     
     # Mostrar el gráfico
     plt.show()
+
+    #MUY BIEN COMPAÑEROS
